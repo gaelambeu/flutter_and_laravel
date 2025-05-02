@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/screens/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text('Login'),
               leading: Icon(Icons.login),
               onTap: (){
-
+                Navigator.of(context).push(MaterialPageRoute(builder: (context)=> LoginScreen()));
               },
             ),
             ListTile(
