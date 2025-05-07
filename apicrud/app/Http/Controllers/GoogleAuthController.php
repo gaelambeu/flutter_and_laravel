@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
 {
@@ -10,11 +13,15 @@ class GoogleAuthController extends Controller
         return Socialite::driver('google')->stateless()->redirect();
     }
 
+
     public function handleGoogleCallback() {
+
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (\Exception $th) {
-            return response()->json(['error' => "Erreur d'authentification Google"], 401);
+            return response()->json([
+                'error' => 'Error authentification'
+            ], 401);
         }
 
         $user = User::where('google_id', $googleUser->id)->orWhere('email', $googleUser->email)->first();
@@ -34,9 +41,12 @@ class GoogleAuthController extends Controller
             ]);
         }
 
+
         $token = $user->createToken('google-auth')->plainTextToken;
-        $redirectUrl = 'frontend://auth-callback?token=' . $token; // Exemple de Deep Link
+        $redirectUrl = 'frontend://auth-callback?token=' . $token;
+
 
         return redirect()->away($redirectUrl);
+
     }
 }
