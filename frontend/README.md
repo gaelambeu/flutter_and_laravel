@@ -1,6 +1,6 @@
-# frontend
+# powebvpn
 
-A new Flutter project.
+Application vpn with vless protocol
 
 ## Getting Started
 
