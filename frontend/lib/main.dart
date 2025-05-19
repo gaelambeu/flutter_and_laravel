@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:powebvpn/auth_pages/logged_in_page.dart';
 import 'package:powebvpn/auth_pages/sign_up_page.dart';
-import 'package:powebvpn/payement/payment_page.dart';
+import 'package:powebvpn/buy/payment_page.dart';
 import 'package:powebvpn/screens/home_screen.dart';
 import 'package:powebvpn/screens/menu_screen.dart';
 import 'package:powebvpn/screens/premium_screen.dart';
@@ -23,7 +23,7 @@ class _MyAppState extends State<MyApp> {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   String? googleId;
-  
+  String? userId;
   
 
   @override
@@ -65,7 +65,7 @@ class _MyAppState extends State<MyApp> {
         '/menu': (context) =>  MenuScreen(),
         '/premium': (context) =>  PremiumScreen(),
         '/profil': (context) => LoggedInPage(googleId: googleId!),
-        '/pay': (context) =>  StylishCryptoPayScreen(),
+        '/pay': (context) =>  PaymentPage(userId: userId!),
 
       },
     );

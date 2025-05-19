@@ -81,10 +81,10 @@ class _LoggedInPageState extends State<LoggedInPage> {
                             : const AssetImage('assets/images/avatar.jpg') as ImageProvider,
                       ),
                       const SizedBox(height: 20),
-                      infoText("Nom", userData!['name']),
-                      infoText("Email", userData!['email']),
-                      infoText("Google ID", userData!['google_id']),
-                      infoText("Access Token", userData!['access_token']),
+                      infoText("Имя", userData!['name']),
+                      infoText("Электронная почта", userData!['email']),
+                      infoText("ИДЕНТИФИКАТОР Google", userData!['google_id']),
+                      infoText("Токен доступа", userData!['access_token']),
                       const SizedBox(height: 30),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
@@ -93,7 +93,7 @@ class _LoggedInPageState extends State<LoggedInPage> {
                         ),
                         icon: const Icon(Icons.logout, size: 32, color: Colors.white),
                         label: const Text(
-                          'Se déconnecter',
+                          'Отключиться',
                           style: TextStyle(
                             fontSize: 19,
                             color: Colors.white,
