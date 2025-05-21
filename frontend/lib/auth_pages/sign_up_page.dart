@@ -23,7 +23,7 @@ class SignUpPage extends StatelessWidget {
       final googleId = user.id;
 
       // 🔍 Vérifie si l'utilisateur existe déjà dans la BDD
-      final checkUri = Uri.parse('http://172.19.0.1:8000/api/user-info/$googleId');
+      final checkUri = Uri.parse('http://127.0.0.2:8000/api/user-info/$googleId');
       final checkResponse = await http.get(checkUri);
 
       if (checkResponse.statusCode == 200) {
@@ -32,7 +32,7 @@ class SignUpPage extends StatelessWidget {
         print('✅ Utilisateur existant : $userData');
 
         // Après vérification de l'abonnement
-        final subscriptionUri = Uri.parse('http://172.19.0.1:8000/api/subscription/handle');
+        final subscriptionUri = Uri.parse('http://127.0.0.2:8000/api/subscription/handle');
         final subscriptionResponse = await http.post(
           subscriptionUri,
           headers: {
@@ -71,7 +71,7 @@ class SignUpPage extends StatelessWidget {
         final avatar = user.photoUrl ?? '';
         final accessToken = auth.accessToken ?? '';
 
-        final registerUri = Uri.parse('http://172.19.0.1:8000/api/google-login');
+        final registerUri = Uri.parse('http://127.0.0.2:8000/api/google-login');
         final registerResponse = await http.post(
           registerUri,
           headers: {
@@ -92,7 +92,7 @@ class SignUpPage extends StatelessWidget {
           final userData = jsonDecode(registerResponse.body);
 
           // Vérification de l’abonnement après l'enregistrement
-          final subscriptionUri = Uri.parse('http://172.19.0.1:8000/api/subscription/handle');
+          final subscriptionUri = Uri.parse('http://127.0.0.2:8000/api/subscription/handle');
           final subscriptionResponse = await http.post(
             subscriptionUri,
             headers: {
