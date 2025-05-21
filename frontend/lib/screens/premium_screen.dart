@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:powebvpn/buy/payment_page.dart';
 
 class PremiumScreen extends StatelessWidget {
   final List<Map<String, String>> plans = [
@@ -8,8 +7,6 @@ class PremiumScreen extends StatelessWidget {
     {'id': '3', 'price': '\$9.99', 'period': 'Monthly'},
     {'id': '4', 'price': '\$99.99', 'period': 'Yearly'},
   ];
-  
-  final userId;
 
   @override
   Widget build(BuildContext context) {
@@ -111,12 +108,8 @@ class PremiumScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PaymentPage(userId: widget.userId),
-                    ),
-                  );
+                onPressed: () {
+                  Navigator.pushNamed(context, '/pay');
                 },
                 child: Text(
                   'Обновлять',

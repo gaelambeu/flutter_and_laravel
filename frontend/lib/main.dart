@@ -24,7 +24,6 @@ class _MyAppState extends State<MyApp> {
 
   String? googleId;
   String? userId;
-  
 
   @override
   void initState() {
@@ -35,15 +34,18 @@ class _MyAppState extends State<MyApp> {
   Future<void> _checkSignIn() async {
     try {
       final account = await _googleSignIn.signInSilently();
-      setState(() {
-        user = account;
-      });
+      if (account != null) {
+        setState(() {
+          user = account;
+          googleId = account.id;
+          userId = account.id; // ou une autre logique si tu as un userId différent
+        });
+      }
     } catch (e) {
-      print("Ошибка при проверке входа в систему: $e");
+      print("Erreur lors de la vérification de la connexion : $e");
     }
   }
 
-  /// Convertit le compte Google en Map<String, dynamic>
   Map<String, dynamic>? get userAsMap {
     if (user == null) return null;
     return {
@@ -56,17 +58,23 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final Widget homeWidget;
+    if (user == null || googleId == null || userId == null) {
+      homeWidget = const SignUpPage(); // En attendant que les données soient prêtes
+    } else {
+      homeWidget = HomeScreen(googleId: googleId!);
+    }
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: user == null ? SignUpPage() : HomeScreen(googleId: googleId!),
+      home: homeWidget,
       routes: {
-        '/signup': (context) =>  SignUpPage(),
-        '/home': (context) => HomeScreen(googleId: googleId!),
+        '/signup': (context) => const SignUpPage(),
+        '/home': (context) => HomeScreen(googleId: googleId ?? ""),
         '/menu': (context) =>  MenuScreen(),
         '/premium': (context) =>  PremiumScreen(),
-        '/profil': (context) => LoggedInPage(googleId: googleId!),
-        '/pay': (context) =>  PaymentPage(userId: userId!),
-
+        '/profil': (context) => LoggedInPage(googleId: googleId ?? ""),
+        '/pay': (context) => PaymentPage(userId: userId ?? ""),
       },
     );
   }

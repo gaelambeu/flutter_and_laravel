@@ -28,7 +28,7 @@ class _LoggedInPageState extends State<LoggedInPage> {
   // Fonction pour récupérer les infos de l'utilisateur à partir de l'API
   Future<void> fetchUserFromApi() async {
     final googleId = widget.googleId;
-    final uri = Uri.parse('http://10.0.2.2:8000/api/user-info/$googleId');
+    final uri = Uri.parse('http://172.19.0.1:8000/api/user-info/$googleId');
     try {
       final response = await http.get(uri, headers: {'Accept': 'application/json'});
 

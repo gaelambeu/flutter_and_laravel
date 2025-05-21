@@ -13,32 +13,45 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> {
+  bool _isLoading = false;
+
   Future<void> _startPayment() async {
-    final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/api/payment/create'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'user_id': widget.userId,
-        'amount': 10.0,
-      }),
-    );
+    setState(() => _isLoading = true);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final paymentUrl = data['payment_url'];
-
-      if (await canLaunchUrl(Uri.parse(paymentUrl))) {
-        await launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible d’ouvrir le lien de paiement')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur lors de la création du paiement')),
+    try {
+      final response = await http.post(
+        Uri.parse('http://172.19.0.1:8000/api/payment/create'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': widget.userId,
+          'amount': 5.0,
+          'currency': 'TON', // ou 'USDT', selon ce que tu gères dans Laravel
+          'method': 'telegram', // si tu veux spécifier que c'est pour Telegram
+        }),
       );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['payment_url'] != null) {
+        final paymentUrl = data['payment_url'];
+
+        if (await canLaunchUrl(Uri.parse(paymentUrl))) {
+          await launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication);
+        } else {
+          _showError("Impossible d’ouvrir le lien de paiement.");
+        }
+      } else {
+        _showError(data['message'] ?? 'Erreur lors de la création du paiement.');
+      }
+    } catch (e) {
+      _showError("Erreur réseau : ${e.toString()}");
+    } finally {
+      setState(() => _isLoading = false);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -46,10 +59,13 @@ class _PaymentPageState extends State<PaymentPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Paiement via Oxapay')),
       body: Center(
-        child: ElevatedButton(
-          onPressed: _startPayment,
-          child: const Text('Payer avec TON via Telegram'),
-        ),
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : ElevatedButton.icon(
+                onPressed: _startPayment,
+                icon: const Icon(Icons.payment),
+                label: const Text('Payer avec TON via Telegram'),
+              ),
       ),
     );
   }
