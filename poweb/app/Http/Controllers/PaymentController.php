@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
 
 use App\Models\Payment;
 
@@ -11,28 +14,35 @@ class PaymentController extends Controller
 
 public function createPayment(Request $request)
 {
-    $amount = 2; // USD
-    $telegramId = $request->telegram_id;
+    $validated = $request->validate([
+        'amount' => 'required|integer|min:1',
+        
+    ]);
+    $amount = $validated['amount'];
 
-    $response = Http::post('https://api.oxapay.com/merchant/invoice', [
-        'api_key' => env('6XK5L3-SYLFNU-UGPRU4-DBL9ES'),
+    $request_body = [
         'amount' => $amount,
-        'currency' => 'TON', // ou 'USDT', etc.
+        'currency' => 'USDT', // ou 'USDT', etc.
         'order_id' => uniqid(),
         'callback_url' => url('/oxapay/callback'),
-        'success_url' => url('/success'),
-        'cancel_url' => url('/cancel'),
-    ]);
-
+        'return_url' => url('/success'),
+    ];
+    Log::debug("[OXAPAY] Response body: " . json_encode($request_body));
+    $response = Http::withHeaders([
+        'merchant_api_key' => env('OXAPAY_MERCHANT_API_KEY'),
+    ])->post('https://api.oxapay.com/v1/payment/invoice', $request_body);
     $data = $response->json();
+    Log::debug("[OXAPAY] Response data: " . json_encode($data));
 
-    if (isset($data['data']['invoice_url'])) {
-        // Envoie le lien de paiement à Telegram
-        Http::post("https://api.telegram.org/bot" . env('7391381549:AAG-YWFuxMWB78kdk3iG5SSh94VCSovDXTc') . "/sendMessage", [
-            'chat_id' => $telegramId,
-            'text' => "Voici votre lien de paiement : " . $data['data']['invoice_url'],
-        ]);
+    if (!isset($data['data']['payment_url'])){
+        abort(503);
     }
+    $payment_url =$data['data']['payment_url'];
+    Log::debug("[OXAPAY] Payment URL: " . $payment_url);
+    return [
+        "payment_url"=>$payment_url
+    ];
+
 }
 
 

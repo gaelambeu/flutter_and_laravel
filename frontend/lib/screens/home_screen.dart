@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Récupère les informations de l'utilisateur à partir de l'API avec googleId
   Future<void> getUserProfile() async {
   final googleId = widget.googleId;
-    final uri = Uri.parse('http://127.0.0.2:8000/api/user-info/$googleId');
+    final uri = Uri.parse('http://192.168.1.45:8000/api/user-info/$googleId');
     try {
       final response = await http.get(uri, headers: {'Accept': 'application/json'});
 

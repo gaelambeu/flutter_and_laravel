@@ -20,29 +20,27 @@ class _PaymentPageState extends State<PaymentPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://172.19.0.1:8000/api/payment/create'),
+        Uri.parse('http://192.168.1.45:8000/api/payment/create'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'user_id': widget.userId,
           'amount': 5.0,
-          'currency': 'TON', // ou 'USDT', selon ce que tu gères dans Laravel
-          'method': 'telegram', // si tu veux spécifier que c'est pour Telegram
+          
         }),
       );
 
       final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && data['payment_url'] != null) {
-        final paymentUrl = data['payment_url'];
-
-        if (await canLaunchUrl(Uri.parse(paymentUrl))) {
-          await launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication);
-        } else {
-          _showError("Impossible d’ouvrir le lien de paiement.");
-        }
-      } else {
+      if (response.statusCode != 200 && data['payment_url'] == null) {
         _showError(data['message'] ?? 'Erreur lors de la création du paiement.');
+        return;
       }
+
+      final paymentUrl = data['payment_url'];
+      if (!await canLaunchUrl(Uri.parse(paymentUrl))) {
+        _showError("Impossible d’ouvrir le lien de paiement.");
+        return;
+      }
+
+      await launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication);
     } catch (e) {
       _showError("Erreur réseau : ${e.toString()}");
     } finally {
