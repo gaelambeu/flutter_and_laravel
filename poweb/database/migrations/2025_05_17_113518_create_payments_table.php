@@ -11,22 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
-            $table->id();
-            $table->string('order_id')->unique();
-            $table->string('currency');
-            $table->integer('amount');
-            $table->string('status')->default('pending');
-            $table->json('raw_data')->nullable();
-            $table->string('track_id')->nullable();
-            $table->string('tx_hash')->nullable();
-            $table->string('address')->nullable();
-            $table->decimal('value', 16, 8)->nullable();
-            $table->string('network')->nullable();
-            $table->string('description')->nullable();
-            $table->bigInteger('confirmed_at')->nullable(); // timestamp UNIX
-            $table->timestamps();
-        });
+       Schema::create('payments', function (Blueprint $table) {
+        $table->id();
+        $table->string('track_id')->nullable();                  // "151811887"
+        $table->string('status')->default('pending');           // "Paid"
+        $table->string('type')->nullable();                     // "invoice"
+        $table->string('module_name')->nullable();              // "OxaPay"
+        $table->decimal('amount', 16, 8)->nullable();            // 10
+        $table->decimal('value', 16, 8)->nullable();             // 3.6839
+        $table->string('currency')->nullable();                 // "POL"
+        $table->string('order_id')->unique();                   // "ORD-12345"
+        $table->string('email')->nullable();                    // "customer@oxapay.com"
+        $table->text('note')->nullable();                       // ""
+        $table->boolean('fee_paid_by_payer')->default(false);   // 0
+        $table->decimal('under_paid_coverage', 16, 8)->nullable(); // 0
+        $table->string('description')->nullable();              // "Test Description"
+        $table->timestamp('paid_at')->nullable();               // 1738493900
+        $table->json('raw_data')->nullable();                   // tout le JSON original
+        $table->timestamps();
+    });
     }
 
     /**

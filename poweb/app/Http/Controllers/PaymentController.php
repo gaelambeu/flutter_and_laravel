@@ -58,51 +58,81 @@ class PaymentController extends Controller
         $postData = $request->getContent();
         $data = json_decode($postData, true);
 
-        if (!isset($data['type']) || $data['type'] !== 'payment') {
-            return response('Invalid data.type', 400);
-        }
-
-        $apiSecretKey = env('OXAPAY_MERCHANT_API_KEY');
         $hmacHeader = $request->header('HMAC');
-        $calculatedHmac = hash_hmac('sha512', $postData, $apiSecretKey);
+        if (!$hmacHeader) {
+            return response('Missing HMAC', 400);
+        }
 
+        $apiSecret = env('OXAPAY_MERCHANT_API_KEY');
+        $calculatedHmac = hash_hmac('sha512', $postData, $apiSecret);
         if (!hash_equals($calculatedHmac, $hmacHeader)) {
-            Log::warning('[OXAPAY] HMAC validation failed');
-            return response('Invalid HMAC signature', 400);
+            return response('Invalid HMAC', 400);
         }
 
-        $payload = $data['data'] ?? [];
-        $orderId = $payload['order_id'] ?? null;
-
-        if (!$orderId) {
-            return response('Missing order_id', 400);
+        // Extraction
+        $paymentData = $data;
+        if (($paymentData['type'] ?? '') !== 'invoice' || ($paymentData['status'] ?? '') !== 'Paid') {
+            return response('Invalid callback type or status', 400);
         }
 
-        $payment = Payment::where('order_id', $orderId)->first();
-
-        $fields = [
-            'status'       => $payload['status'] ?? 'confirmed',
-            'track_id'     => $payload['track_id'] ?? null,
-            'tx_hash'      => $payload['tx_hash'] ?? null,
-            'address'      => $payload['address'] ?? null,
-            'amount'       => isset($payload['amount']) ? intval($payload['amount']) : null,
-            'value'        => $payload['value'] ?? null,
-            'currency'     => $payload['currency'] ?? null,
-            'network'      => $payload['network'] ?? null,
-            'description'  => $payload['description'] ?? null,
-            'confirmed_at' => $payload['date'] ?? null,
-            'raw_data'     => $data,
-        ];
-
-        if ($payment) {
-            $payment->update($fields);
-            Log::info("[OXAPAY] Updated existing payment: $orderId");
-        } else {
-            $fields['order_id'] = $orderId;
-            Payment::create($fields);
-            Log::info("[OXAPAY] Created new payment: $orderId");
-        }
+        // Enregistrement
+        Payment::updateOrCreate(
+            ['order_id' => $paymentData['order_id']],
+            [
+                'track_id'             => $paymentData['track_id'],
+                'status'               => $paymentData['status'],
+                'type'                 => $paymentData['type'],
+                'module_name'          => $paymentData['module_name'] ?? 'OxaPay',
+                'amount'               => $paymentData['amount'],
+                'value'                => $paymentData['value'],
+                'currency'             => $paymentData['currency'],
+                'email'                => $paymentData['email'] ?? null,
+                'note'                 => $paymentData['note'] ?? '',
+                'fee_paid_by_payer'    => (bool) ($paymentData['fee_paid_by_payer'] ?? 0),
+                'under_paid_coverage'  => $paymentData['under_paid_coverage'] ?? 0,
+                'description'          => $paymentData['description'] ?? '',
+                'paid_at'              => date('Y-m-d H:i:s', $paymentData['date']),
+                'raw_data'             => $paymentData,
+            ]
+        );
 
         return response('OK', 200);
+
+
+
+
+
+
+        // Juste après l'enregistrement du Payment confirmé (dans handleCallback)
+
+        $email = $paymentData['email'] ?? null;
+
+        if ($email) {
+            $user = User::where('email', $email)->first();
+
+            if ($user) {
+                $subscription = Subscription::where('google_id', $user->google_id)->first();
+
+                if (!$subscription) {
+                    // Crée un abonnement s’il n’existe pas
+                    Subscription::create([
+                        'google_id' => $user->google_id,
+                        'prix' => 100,
+                        'status' => 'pay',
+                        'account' => 'unlocked',
+                        'jours' => 30,
+                    ]);
+                } else {
+                    // Si abonnement existe, on remet à 30 jours et déverrouille
+                    $subscription->update([
+                        'status' => 'pay',
+                        'account' => 'unlocked',
+                        'jours' => 30,
+                    ]);
+                }
+            }
+        }
+
     }
+
 }

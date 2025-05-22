@@ -17,13 +17,9 @@ return new class extends Migration
             $table->integer('prix')->default(100);
             $table->enum('status', ['pay', 'nopay'])->default('pay');
             $table->enum('account', ['locked', 'unlocked'])->default('unlocked');
+            $table->integer('jours')->default(30);
             //$table->boolean('demande_unlock')->default(false);
             $table->timestamps();
-
-            $table->foreign('google_id')
-                  ->references('google_id')
-                  ->on('users')
-                  ->onDelete('cascade');
         });
     }
 

@@ -29,3 +29,4 @@ Route::post('/subscription/handle', [SubscriptionController::class, 'handle']);
 
 Route::post('/oxapay/create', [PaymentController::class, 'createPayment']);
 Route::post('/oxapay/callback', [PaymentController::class, 'handleCallback']);
+
