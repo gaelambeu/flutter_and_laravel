@@ -20,11 +20,10 @@ class _PaymentPageState extends State<PaymentPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.45:8000/api/payment/create'),
+        Uri.parse('http://192.168.1.105:8000/api/payment/create'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'amount': 5.0,
-          
+          'amount': 1.0,
         }),
       );
 

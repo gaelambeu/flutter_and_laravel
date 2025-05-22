@@ -27,6 +27,5 @@ Route::post('/subscription/handle', [SubscriptionController::class, 'handle']);
 
 
 
-Route::post('/payment/create', [PaymentController::class, 'createPayment']);
-Route::post('/payment/webhook', [PaymentController::class, 'handleWebhook']);
-
+Route::post('/oxapay/create', [PaymentController::class, 'createPayment']);
+Route::post('/oxapay/callback', [PaymentController::class, 'handleCallback']);

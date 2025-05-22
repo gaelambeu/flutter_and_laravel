@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'user_id', 'order_id', 'amount', 'currency', 'status', 'transaction_id'
+        'order_id', 'currency', 'amount', 'status', 'track_id',
+        'tx_hash', 'address', 'value', 'network', 'description',
+        'confirmed_at', 'raw_data'
+    ];
+
+    protected $casts = [
+        'raw_data' => 'array',
     ];
 }

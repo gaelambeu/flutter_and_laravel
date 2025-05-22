@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:powebvpn/screens/home_screen.dart';
 import 'dart:convert';
 import 'sign_up_page.dart';
 import 'package:powebvpn/api/google_signin_api.dart';
@@ -28,7 +27,7 @@ class _LoggedInPageState extends State<LoggedInPage> {
   // Fonction pour récupérer les infos de l'utilisateur à partir de l'API
   Future<void> fetchUserFromApi() async {
     final googleId = widget.googleId;
-    final uri = Uri.parse('http://192.168.1.45:8000/api/user-info/$googleId');
+    final uri = Uri.parse('http://192.168.1.105:8000/api/user-info/$googleId');
     try {
       final response = await http.get(uri, headers: {'Accept': 'application/json'});
 

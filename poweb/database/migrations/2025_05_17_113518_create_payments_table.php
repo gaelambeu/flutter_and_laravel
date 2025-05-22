@@ -13,12 +13,18 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->string('user_id');
             $table->string('order_id')->unique();
-            $table->decimal('amount', 10, 2);
-            $table->string('currency')->default('TON');
+            $table->string('currency');
+            $table->integer('amount');
             $table->string('status')->default('pending');
-            $table->string('transaction_id')->nullable();
+            $table->json('raw_data')->nullable();
+            $table->string('track_id')->nullable();
+            $table->string('tx_hash')->nullable();
+            $table->string('address')->nullable();
+            $table->decimal('value', 16, 8)->nullable();
+            $table->string('network')->nullable();
+            $table->string('description')->nullable();
+            $table->bigInteger('confirmed_at')->nullable(); // timestamp UNIX
             $table->timestamps();
         });
     }

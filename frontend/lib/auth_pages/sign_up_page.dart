@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:powebvpn/api/google_signin_api.dart';
-import 'package:powebvpn/auth_pages/logged_in_page.dart';
 import 'package:powebvpn/screens/home_screen.dart';
 
 class SignUpPage extends StatelessWidget {
@@ -23,7 +22,7 @@ class SignUpPage extends StatelessWidget {
       final googleId = user.id;
 
       // 🔍 Vérifie si l'utilisateur existe déjà dans la BDD
-      final checkUri = Uri.parse('http://192.168.1.45:8000/api/user-info/$googleId');
+      final checkUri = Uri.parse('http://192.168.1.105:8000/api/user-info/$googleId');
       final checkResponse = await http.get(checkUri);
 
       if (checkResponse.statusCode == 200) {
@@ -32,7 +31,7 @@ class SignUpPage extends StatelessWidget {
         print('✅ Utilisateur existant : $userData');
 
         // Après vérification de l'abonnement
-        final subscriptionUri = Uri.parse('http://192.168.1.45:8000/api/subscription/handle');
+        final subscriptionUri = Uri.parse('http://192.168.1.105:8000/api/subscription/handle');
         final subscriptionResponse = await http.post(
           subscriptionUri,
           headers: {
@@ -71,7 +70,7 @@ class SignUpPage extends StatelessWidget {
         final avatar = user.photoUrl ?? '';
         final accessToken = auth.accessToken ?? '';
 
-        final registerUri = Uri.parse('http://192.168.1.45:8000/api/google-login');
+        final registerUri = Uri.parse('http://192.168.1.105:8000/api/google-login');
         final registerResponse = await http.post(
           registerUri,
           headers: {
@@ -92,7 +91,7 @@ class SignUpPage extends StatelessWidget {
           final userData = jsonDecode(registerResponse.body);
 
           // Vérification de l’abonnement après l'enregistrement
-          final subscriptionUri = Uri.parse('http://192.168.1.45:8000/api/subscription/handle');
+          final subscriptionUri = Uri.parse('http://192.168.1.105:8000/api/subscription/handle');
           final subscriptionResponse = await http.post(
             subscriptionUri,
             headers: {

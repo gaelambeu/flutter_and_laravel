@@ -25,7 +25,7 @@ class SignUpPage extends StatelessWidget {
     final googleId = user.id;
 
     // 🔍 Vérifie si l'utilisateur existe déjà dans la BDD
-    final checkUri = Uri.parse('http://192.168.1.45:8000/api/user-info/$googleId');
+    final checkUri = Uri.parse('http://192.168.1.105:8000/api/user-info/$googleId');
     final checkResponse = await http.get(checkUri);
 
     if (checkResponse.statusCode == 200) {
@@ -45,7 +45,7 @@ class SignUpPage extends StatelessWidget {
       final avatar = user.photoUrl ?? '';
       final accessToken = auth.accessToken ?? '';
 
-      final registerUri = Uri.parse('http://192.168.1.45:8000/api/google-login');
+      final registerUri = Uri.parse('http://192.168.1.105:8000/api/google-login');
       final registerResponse = await http.post(
         registerUri,
         headers: {
