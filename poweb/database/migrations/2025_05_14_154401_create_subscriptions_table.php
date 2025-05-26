@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('status', ['pay', 'nopay'])->default('pay');
             $table->enum('account', ['locked', 'unlocked'])->default('unlocked');
             $table->integer('jours')->default(30);
+            $table->enum('type_account', ['new', 'old'])->default('new');
             //$table->boolean('demande_unlock')->default(false);
             $table->timestamps();
         });

@@ -14,12 +14,15 @@ class DecrementSubscriptionDays extends Command
     {
         $subscriptions = Subscription::all();
 
-        foreach ($subscriptions as $sub) {
+        foreach (Subscription::all() as $sub) {
             if ($sub->jours > 0) {
                 $sub->jours -= 1;
 
+                // Si les jours sont épuisés, on bloque
                 if ($sub->jours === 0) {
+                    $sub->status = 'nopay';
                     $sub->account = 'locked';
+                    $sub->type_account = 'old'; // même s’il était "new"
                 }
 
                 $sub->save();

@@ -6,6 +6,7 @@ import 'package:powebvpn/buy/payment_page.dart';
 import 'package:powebvpn/screens/home_screen.dart';
 import 'package:powebvpn/screens/menu_screen.dart';
 import 'package:powebvpn/screens/premium_screen.dart';
+import 'package:powebvpn/screens/sub_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -71,6 +72,7 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/signup': (context) => const SignUpPage(),
         '/home': (context) => HomeScreen(googleId: googleId ?? ""),
+        '/sub' : (context) => const SubPage(),
         '/menu': (context) =>  MenuScreen(),
         '/premium': (context) =>  PremiumScreen(),
         '/profil': (context) => LoggedInPage(googleId: googleId ?? ""),

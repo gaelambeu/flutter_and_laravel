@@ -1,8 +1,9 @@
+// lib/screens/signup_page.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:powebvpn/api/google_signin_api.dart';
-import 'package:powebvpn/screens/home_screen.dart';
+import 'package:powebvpn/screens/sub_page.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
@@ -21,50 +22,12 @@ class SignUpPage extends StatelessWidget {
       final auth = await user.authentication;
       final googleId = user.id;
 
-      // 🔍 Vérifie si l'utilisateur existe déjà dans la BDD
+      // Vérifie si l'utilisateur existe déjà dans la base de données
       final checkUri = Uri.parse('http://192.168.1.105:8000/api/user-info/$googleId');
       final checkResponse = await http.get(checkUri);
 
-      if (checkResponse.statusCode == 200) {
-        // ✅ Utilisateur trouvé dans la BDD
-        final userData = jsonDecode(checkResponse.body);
-        print('✅ Utilisateur existant : $userData');
-
-        // Après vérification de l'abonnement
-        final subscriptionUri = Uri.parse('http://192.168.1.105:8000/api/subscription/handle');
-        final subscriptionResponse = await http.post(
-          subscriptionUri,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode({'google_id': googleId}),
-        );
-
-        if (subscriptionResponse.statusCode == 200) {
-          final subscriptionData = jsonDecode(subscriptionResponse.body);
-
-          if (subscriptionData['locked'] == true) {
-            // Si le compte est bloqué
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Votre compte est bloqué.')),
-            );
-          } else {
-            // Si le compte est débloqué, aller à l'écran principal
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => HomeScreen(googleId: googleId),
-              ),
-            );
-          }
-        } else {
-          print('❌ Échec de la vérification de l’abonnement: ${subscriptionResponse.statusCode}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur: ${jsonDecode(subscriptionResponse.body)['message']}')),
-          );
-        }
-      } else {
-        // ❌ Pas trouvé → on l’enregistre
+      if (checkResponse.statusCode != 200) {
+        // Utilisateur non trouvé → on l’enregistre
         final name = user.displayName ?? 'Nom inconnu';
         final email = user.email;
         final avatar = user.photoUrl ?? '';
@@ -73,10 +36,7 @@ class SignUpPage extends StatelessWidget {
         final registerUri = Uri.parse('http://192.168.1.105:8000/api/google-login');
         final registerResponse = await http.post(
           registerUri,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
           body: jsonEncode({
             'name': name,
             'email': email,
@@ -86,51 +46,20 @@ class SignUpPage extends StatelessWidget {
           }),
         );
 
-        if (registerResponse.statusCode == 200) {
-          print('✅ Utilisateur enregistré avec succès');
-          final userData = jsonDecode(registerResponse.body);
-
-          // Vérification de l’abonnement après l'enregistrement
-          final subscriptionUri = Uri.parse('http://192.168.1.105:8000/api/subscription/handle');
-          final subscriptionResponse = await http.post(
-            subscriptionUri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({'google_id': googleId}),
-          );
-
-          if (subscriptionResponse.statusCode == 200) {
-            final subscriptionData = jsonDecode(subscriptionResponse.body);
-
-            if (subscriptionData['locked'] == true) {
-              // Si le compte est bloqué
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Ваша учетная запись заблокирована.')),
-              );
-            } else {
-              // Si le compte est débloqué, aller à l'écran principal
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => HomeScreen(googleId: googleId),
-                ),
-              );
-            }
-          } else {
-            print('❌ Échec de la vérification de l’abonnement: ${subscriptionResponse.statusCode}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Erreur: ${jsonDecode(subscriptionResponse.body)['message']}')),
-            );
-          }
-        } else {
-          print('❌ Échec de l’enregistrement: ${registerResponse.statusCode}');
-          print('Corps: ${registerResponse.body}');
+        if (registerResponse.statusCode != 200) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur: ${jsonDecode(registerResponse.body)['errors'].toString()}')),
+            SnackBar(content: Text('Erreur: ${jsonDecode(registerResponse.body)['message'] ?? 'Échec de l\'enregistrement'}')),
           );
+          return;
         }
       }
+
+      // Aller à la page d’abonnement
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => SubPage(googleId: googleId),
+        ),
+      );
     } catch (e) {
       print('❌ Erreur Google Sign-In : $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -153,11 +82,7 @@ class SignUpPage extends StatelessWidget {
             const SizedBox(height: 30),
             const Text(
               'Добро пожаловать !',
-              style: TextStyle(
-                fontSize: 28,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             const Text(
@@ -167,17 +92,11 @@ class SignUpPage extends StatelessWidget {
             ),
             const Spacer(),
             ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, minimumSize: const Size(double.infinity, 50)),
               icon: Image.asset('assets/images/google.png', height: 18),
               label: const Text(
                 'Войти в систему с помощью Google',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.black),
               ),
               onPressed: () => _handleGoogleSignIn(context),
             ),

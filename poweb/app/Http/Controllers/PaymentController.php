@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\Payment;
+use App\Models\User;
+use App\Models\Subscription;
 
 class PaymentController extends Controller
 {
@@ -39,7 +41,6 @@ class PaymentController extends Controller
             abort(503, 'Erreur de communication avec Oxapay');
         }
 
-        // Enregistrement du paiement
         Payment::create([
             'order_id' => $order_id,
             'currency' => 'USDT',
@@ -69,14 +70,13 @@ class PaymentController extends Controller
             return response('Invalid HMAC', 400);
         }
 
-        // Extraction
         $paymentData = $data;
+
         if (($paymentData['type'] ?? '') !== 'invoice' || ($paymentData['status'] ?? '') !== 'Paid') {
             return response('Invalid callback type or status', 400);
         }
 
-        // Enregistrement
-        Payment::updateOrCreate(
+        $payment = Payment::updateOrCreate(
             ['order_id' => $paymentData['order_id']],
             [
                 'track_id'             => $paymentData['track_id'],
@@ -96,43 +96,39 @@ class PaymentController extends Controller
             ]
         );
 
-        return response('OK', 200);
-
-
-
-
-
-
-        // Juste après l'enregistrement du Payment confirmé (dans handleCallback)
-
+        // ✅ Gestion de l’abonnement après paiement
         $email = $paymentData['email'] ?? null;
 
-        if ($email) {
-            $user = User::where('email', $email)->first();
+if ($email) {
+    $user = User::where('email', $email)->first();
 
-            if ($user) {
-                $subscription = Subscription::where('google_id', $user->google_id)->first();
+    if ($user) {
+        $subscription = Subscription::where('google_id', $user->google_id)->first();
 
-                if (!$subscription) {
-                    // Crée un abonnement s’il n’existe pas
-                    Subscription::create([
-                        'google_id' => $user->google_id,
-                        'prix' => 100,
-                        'status' => 'pay',
-                        'account' => 'unlocked',
-                        'jours' => 30,
-                    ]);
-                } else {
-                    // Si abonnement existe, on remet à 30 jours et déverrouille
-                    $subscription->update([
-                        'status' => 'pay',
-                        'account' => 'unlocked',
-                        'jours' => 30,
-                    ]);
-                }
-            }
+        if ($subscription) {
+            $nouveauxJours = $subscription->jours + 30;
+
+            $subscription->update([
+                'status'       => 'pay',
+                'account'      => 'unlocked',
+                'jours'        => $nouveauxJours,
+                'type_account' => $subscription->type_account === 'new' && $nouveauxJours > 30 ? 'old' : $subscription->type_account,
+            ]);
+        } else {
+            // Paiement sans abonnement existant (rare mais possible)
+            Subscription::create([
+                'google_id'     => $user->google_id,
+                'prix'          => 100,
+                'status'        => 'pay',
+                'account'       => 'unlocked',
+                'jours'         => 30,
+                'type_account'  => 'new',
+            ]);
         }
-
     }
+}
 
+
+        return response('OK', 200);
+    }
 }

@@ -11,6 +11,7 @@ class Subscription extends Model
         'prix',
         'status',
         'account',
+        'type_account'
         //'demande_unlock'
     ];
 
