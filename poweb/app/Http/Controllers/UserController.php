@@ -6,12 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Subscription;
 
+
 class UserController extends Controller
 {
-    /**
-     * Enregistre l’utilisateur (si nouveau) et déclenche l’abonnement via Observer.
-     */
-    public function login($google_id)
+
+    public function getUserInfo($google_id)
     {
         if (!is_string($google_id) || empty($google_id)) {
             return response()->json([
@@ -20,16 +19,12 @@ class UserController extends Controller
             ], 422);
         }
 
+        $userQuery = User::where('google_id', $google_id);
+
+        if (!$userQuery->exists()) abort(404);
+
         // Création ou récupération de l'utilisateur
-        $user = User::firstOrCreate(
-            ['google_id' => $google_id],
-            [
-                'name' => 'Utilisateur',
-                'email' => null,
-                'avatar' => null,
-                'access_token' => null,
-            ]
-        );
+        $user = $userQuery->first();
 
         return response()->json([
             'success' => true,
@@ -43,4 +38,47 @@ class UserController extends Controller
             ]
         ]);
     }
+
+
+
+
+
+
+    public function getUserSubInfo($google_id)
+{
+    if (!is_string($google_id) || empty($google_id)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Google ID invalide.',
+        ], 422);
+    }
+
+    $user = User::where('google_id', $google_id)->first();
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Utilisateur non trouvé.',
+        ], 404);
+    }
+
+    $subscription = Subscription::where('google_id', $google_id)->latest('created_at')->first();
+
+    return response()->json([
+        'success' => true,
+        'user' => [
+            'google_id'    => $user->google_id,
+            'name'         => $user->name,
+            'email'        => $user->email,
+            'avatar'       => $user->avatar,
+            'access_token' => $user->access_token,
+        ],
+        'account'      => $subscription?->account ?? 'locked',
+        'jours'        => $subscription?->jours ?? 0,
+        'expire_date'  => optional($subscription?->expire_date)->format('Y-m-d'),
+    ]);
+}
+
+
+
 }

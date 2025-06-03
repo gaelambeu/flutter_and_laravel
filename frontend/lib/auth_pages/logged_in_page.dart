@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
 import 'sign_up_page.dart';
 import 'package:powebvpn/api/google_signin_api.dart';
 
 class LoggedInPage extends StatefulWidget {
-  final String googleId; // googleId passé par le constructeur
+  final String googleId;
 
   const LoggedInPage({Key? key, required this.googleId}) : super(key: key);
 
@@ -13,10 +14,10 @@ class LoggedInPage extends StatefulWidget {
   _LoggedInPageState createState() => _LoggedInPageState();
 }
 
-
 class _LoggedInPageState extends State<LoggedInPage> {
-  Map<String, dynamic>? userData;
+  Map<String, dynamic>? user;
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -24,32 +25,41 @@ class _LoggedInPageState extends State<LoggedInPage> {
     fetchUserFromApi();
   }
 
-  // Fonction pour récupérer les infos de l'utilisateur à partir de l'API
   Future<void> fetchUserFromApi() async {
-    final googleId = widget.googleId;
-    final uri = Uri.parse('http://192.168.1.105:8000/api/user-info/$googleId');
+    final uri = Uri.parse('http://192.168.1.105:8000/api/user-info/${widget.googleId}');
+
     try {
       final response = await http.get(uri, headers: {'Accept': 'application/json'});
+      final body = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true && body['user'] != null) {
         setState(() {
-          userData = data;
+          user = body['user'];
           isLoading = false;
         });
       } else {
-        print('❌ Erreur lors de la récupération : ${response.statusCode}');
-        print('📥 Corps : ${response.body}');
         setState(() {
+          errorMessage = body['message'] ?? '❌ Erreur lors de la récupération des données utilisateur.';
           isLoading = false;
         });
       }
     } catch (e) {
-      print('❌ Exception HTTP : $e');
       setState(() {
+        errorMessage = '⚠️ Erreur réseau : $e';
         isLoading = false;
       });
     }
+  }
+
+  Future<void> logout() async {
+    await GoogleSigninApi.logout();
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const SignUpPage()),
+      (route) => false, // Supprime toutes les pages précédentes
+    );
   }
 
   @override
@@ -60,55 +70,68 @@ class _LoggedInPageState extends State<LoggedInPage> {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.chevron_left, color: Colors.white, size: 32),
+          icon: const Icon(Icons.chevron_left, color: Colors.white, size: 32),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.orange))
-          : userData == null
-              ? const Center(child: Text("❌ Données utilisateur introuvables", style: TextStyle(color: Colors.white)))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 30),
-                      CircleAvatar(
-                        radius: 80,
-                        backgroundImage: (userData!['avatar'] != null && userData!['avatar'].toString().isNotEmpty)
-                            ? NetworkImage(userData!['avatar'])
-                            : const AssetImage('assets/images/avatar.jpg') as ImageProvider,
-                      ),
-                      const SizedBox(height: 20),
-                      infoText("Имя", userData!['name']),
-                      infoText("Электронная почта", userData!['email']),
-                      infoText("ИДЕНТИФИКАТОР Google", userData!['google_id']),
-                      infoText("Токен доступа", userData!['access_token']),
-                      const SizedBox(height: 30),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        icon: const Icon(Icons.logout, size: 32, color: Colors.white),
-                        label: const Text(
-                          'Отключиться',
-                          style: TextStyle(
-                            fontSize: 19,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        onPressed: () async {
-                          await GoogleSigninApi.logout();
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const SignUpPage()),
-                          );
-                        },
-                      ),
-                    ],
+          ? const Center(
+              child: CircularProgressIndicator(color: Colors.orange),
+            )
+          : errorMessage != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.redAccent, fontSize: 18),
+                    ),
                   ),
-                ),
+                )
+              : user == null
+                  ? const Center(
+                      child: Text(
+                        '❌ Données utilisateur introuvables.',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 30),
+                          CircleAvatar(
+                            radius: 80,
+                            backgroundImage: (user!['avatar'] != null && user!['avatar'].toString().isNotEmpty)
+                                ? NetworkImage(user!['avatar'])
+                                : const AssetImage('assets/images/avatar.jpg') as ImageProvider,
+                          ),
+                          const SizedBox(height: 20),
+                          infoText("Имя", user!['name'] ?? ''),
+                          infoText("Электронная почта", user!['email'] ?? ''),
+                          infoText("ИДЕНТИФИКАТОР Google", user!['google_id'] ?? ''),
+                          infoText("Токен доступа", user!['access_token'] ?? ''),
+                          const SizedBox(height: 30),
+                          ElevatedButton.icon(
+                            onPressed: logout,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            ),
+                            icon: const Icon(Icons.logout, size: 32, color: Colors.white),
+                            label: const Text(
+                              'Отключиться',
+                              style: TextStyle(
+                                fontSize: 19,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
     );
   }
 

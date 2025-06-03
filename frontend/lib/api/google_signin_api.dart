@@ -6,5 +6,9 @@ class GoogleSigninApi {
   );
 
   static Future<GoogleSignInAccount?> login() => _googleSignIn.signIn();
-  static Future logout() => _googleSignIn.disconnect();
+  
+  static Future<void> logout() async {
+    await _googleSignIn.disconnect();
+    await _googleSignIn.signOut();
+  }
 }

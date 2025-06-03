@@ -19,28 +19,56 @@ class _PaymentPageState extends State<PaymentPage> {
     setState(() => _isLoading = true);
 
     try {
+      print('🔄 Tentative de création du paiement...');
+
       final response = await http.post(
-        Uri.parse('http://192.168.1.105:8000/api/payment/create'),
+        Uri.parse('http://192.168.1.105:8000/api/oxapay/create'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'amount': 1.0,
+          'amount': 2,
+          'google_id': widget.userId, // si nécessaire pour lier à l'utilisateur
         }),
       );
 
-      final data = jsonDecode(response.body);
-      if (response.statusCode != 200 && data['payment_url'] == null) {
-        _showError(data['message'] ?? 'Erreur lors de la création du paiement.');
+      print('📡 Statut HTTP: ${response.statusCode}');
+      print('📦 Corps de la réponse: ${response.body}');
+
+      late final Map<String, dynamic> data;
+
+      try {
+        data = jsonDecode(response.body);
+      } catch (e) {
+        print('❌ Erreur de décodage JSON: ${e.toString()}');
+        _showError('Réponse invalide du serveur.');
+        return;
+      }
+
+      if (response.statusCode != 200) {
+        print('❗ Statut non-200: ${response.statusCode}');
+        _showError(data['message'] ?? 'Erreur serveur lors du paiement.');
         return;
       }
 
       final paymentUrl = data['payment_url'];
-      if (!await canLaunchUrl(Uri.parse(paymentUrl))) {
+      print('🔗 Lien de paiement: $paymentUrl');
+
+      if (paymentUrl == null || paymentUrl.isEmpty) {
+        print('⚠️ Lien de paiement manquant ou vide.');
+        _showError('Lien de paiement non disponible.');
+        return;
+      }
+
+      final uri = Uri.parse(paymentUrl);
+      if (!await canLaunchUrl(uri)) {
+        print('❌ Impossible de lancer l’URL: $paymentUrl');
         _showError("Impossible d’ouvrir le lien de paiement.");
         return;
       }
 
-      await launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication);
+      print('🚀 Ouverture du lien de paiement...');
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
+      print("❌ Erreur réseau ou inconnue: ${e.toString()}");
       _showError("Erreur réseau : ${e.toString()}");
     } finally {
       setState(() => _isLoading = false);
@@ -48,6 +76,7 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   void _showError(String message) {
+    print('⚠️ Message d’erreur affiché à l’utilisateur: $message');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 

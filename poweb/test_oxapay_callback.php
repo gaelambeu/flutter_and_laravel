@@ -1,28 +1,31 @@
 <?php
 
-$apiUrl = 'http://localhost:8000/api/oxapay/callback';
-$secretKey = '6XK5L3-SYLFNU-UGPRU4-DBL9ES';
+$apiUrl = 'http://localhost:8000/api/oxapay/callback'; // Change selon ton environnement
+$secretKey = 'VQ2N29-NW8ATP-V2KXP8-YVNPOJ'; // Ta vraie clé secrète
 
+// Données de test du paiement
 $payload = [
-    "track_id" => "151811887",
+    "track_id" => uniqid(),
     "status" => "Paid",
     "type" => "invoice",
     "module_name" => "OxaPay",
     "amount" => 10,
     "value" => 3.6839,
     "currency" => "POL",
-    "order_id" => "ORD-12345",
-    "email" => "ivan.petrov@gmail.com",
+    "order_id" => "ORD-12345-" . uniqid(),
+    "email" => "ambeuemmanuel20@gmail.com",
     "note" => "",
     "fee_paid_by_payer" => 0,
     "under_paid_coverage" => 0,
-    "description" => "Test Description",
-    "date" => 1738493900
+    "description" => "Test de paiement manuel",
+    "date" => time(),
 ];
 
-$json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+// Encode JSON et génère la signature HMAC
+$json = json_encode($payload, JSON_UNESCAPED_UNICODE);
 $hmac = hash_hmac('sha512', $json, $secretKey);
 
+// Initialisation de la requête cURL
 $ch = curl_init($apiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -32,8 +35,16 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
 
+// Exécution de la requête
 $response = curl_exec($ch);
 $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+if (curl_errno($ch)) {
+    echo "❌ Erreur cURL : " . curl_error($ch) . "\n";
+}
+
 curl_close($ch);
 
-echo "HTTP Code: $httpcode\nResponse: $response\n";
+// Affichage du résultat
+echo "✅ HTTP Code: $httpcode\n";
+echo "📦 Response: ok";

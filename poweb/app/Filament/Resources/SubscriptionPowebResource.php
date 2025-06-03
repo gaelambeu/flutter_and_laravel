@@ -40,8 +40,11 @@ class SubscriptionPowebResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
+            Tables\Columns\TextColumn::make('email'),
             Tables\Columns\TextColumn::make('google_id'),
             Tables\Columns\TextColumn::make('prix'),
+            Tables\Columns\TextColumn::make('jours'),
+            Tables\Columns\TextColumn::make('expire_date'),
             Tables\Columns\BadgeColumn::make('status')->colors(['pay' => 'success', 'nopay' => 'danger']),
             Tables\Columns\BadgeColumn::make('account')->colors(['unlocked' => 'success', 'locked' => 'danger']),
         ])->actions([

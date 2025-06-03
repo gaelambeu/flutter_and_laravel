@@ -17,13 +17,19 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/google-login', [GoogleAuthController::class, 'login']);
 
+//Route::post('/google-login', [UserController::class, 'login']);
 
-Route::get('/user-info/{google_id}', [UserController::class, 'getByGoogleId']);
+// Login utilisateur via google_id (POST ou GET possible, ici GET simple)
+Route::get('/user-info/{google_id}', [UserController::class, 'getUserInfo']);
+
+// Récupérer les infos de l'utilisateur + abonnement
+Route::get('/user-sub-info/{google_id}', [UserController::class, 'getUserSubInfo']);
 
 
-Route::get('/subscription/{google_id}', [SubscriptionController::class, 'check']);
-
+Route::get('/subscription/{googleId}', [SubscriptionController::class, 'show']);
 Route::post('/subscription/handle', [SubscriptionController::class, 'handle']);
+
+
 
 
 

@@ -7,52 +7,29 @@ use App\Models\Subscription;
 
 class UserObserver
 {
-    /**
-     * Handle the User "created" event.
-     */
     public function created(User $user)
     {
-        Subscription::firstOrCreate(
-            ['google_id' => $user->google_id],
+        if (!$user->google_id) return;
+
+        $subscription = Subscription::firstOrCreate(
+            [
+                'google_id' => $user->google_id,
+                'email' => $user->email,
+            ],
             [
                 'prix' => 100,
                 'status' => 'pay',
                 'account' => 'unlocked',
-                'jours' => 30,
+                'expire_date' => now(),
                 'type_account' => 'new',
             ]
         );
+
+        $subscription->updateSubscription(30); // Ajoute 30 jours et enregistre jours restants
     }
 
-    /**
-     * Handle the User "updated" event.
-     */
-    public function updated(User $user): void
-    {
-        //
-    }
-
-    /**
-     * Handle the User "deleted" event.
-     */
-    public function deleted(User $user): void
-    {
-        //
-    }
-
-    /**
-     * Handle the User "restored" event.
-     */
-    public function restored(User $user): void
-    {
-        //
-    }
-
-    /**
-     * Handle the User "force deleted" event.
-     */
-    public function forceDeleted(User $user): void
-    {
-        //
-    }
+    public function updated(User $user): void {}
+    public function deleted(User $user): void {}
+    public function restored(User $user): void {}
+    public function forceDeleted(User $user): void {}
 }

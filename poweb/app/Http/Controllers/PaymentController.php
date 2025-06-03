@@ -70,65 +70,53 @@ class PaymentController extends Controller
             return response('Invalid HMAC', 400);
         }
 
-        $paymentData = $data;
-
-        if (($paymentData['type'] ?? '') !== 'invoice' || ($paymentData['status'] ?? '') !== 'Paid') {
+        if (($data['type'] ?? '') !== 'invoice' || ($data['status'] ?? '') !== 'Paid') {
             return response('Invalid callback type or status', 400);
         }
 
-        $payment = Payment::updateOrCreate(
-            ['order_id' => $paymentData['order_id']],
-            [
-                'track_id'             => $paymentData['track_id'],
-                'status'               => $paymentData['status'],
-                'type'                 => $paymentData['type'],
-                'module_name'          => $paymentData['module_name'] ?? 'OxaPay',
-                'amount'               => $paymentData['amount'],
-                'value'                => $paymentData['value'],
-                'currency'             => $paymentData['currency'],
-                'email'                => $paymentData['email'] ?? null,
-                'note'                 => $paymentData['note'] ?? '',
-                'fee_paid_by_payer'    => (bool) ($paymentData['fee_paid_by_payer'] ?? 0),
-                'under_paid_coverage'  => $paymentData['under_paid_coverage'] ?? 0,
-                'description'          => $paymentData['description'] ?? '',
-                'paid_at'              => date('Y-m-d H:i:s', $paymentData['date']),
-                'raw_data'             => $paymentData,
-            ]
-        );
+        // ✅ 1. Enregistrement du paiement
+        $payment = Payment::create([
+            'order_id'            => $data['order_id'],
+            'track_id'            => $data['track_id'],
+            'status'              => $data['status'],
+            'type'                => $data['type'],
+            'module_name'         => $data['module_name'] ?? 'OxaPay',
+            'amount'              => $data['amount'],
+            'value'               => $data['value'],
+            'currency'            => $data['currency'],
+            'email'               => $data['email'] ?? null,
+            'note'                => $data['note'] ?? '',
+            'fee_paid_by_payer'   => (bool) ($data['fee_paid_by_payer'] ?? 0),
+            'under_paid_coverage' => $data['under_paid_coverage'] ?? 0,
+            'description'         => $data['description'] ?? '',
+            'paid_at'             => date('Y-m-d H:i:s', $data['date']),
+            'raw_data'            => $data,
+        ]);
 
-        // ✅ Gestion de l’abonnement après paiement
-        $email = $paymentData['email'] ?? null;
+        // ✅ 2. Mise à jour de la subscription par email
+        $email = $data['email'] ?? null;
 
-if ($email) {
-    $user = User::where('email', $email)->first();
+        if ($email) {
+            $subscription = Subscription::where('email', $email)->first();
 
-    if ($user) {
-        $subscription = Subscription::where('google_id', $user->google_id)->first();
+            if (!$subscription) {
+                Log::warning("❗ Subscription introuvable pour l'email : $email");
+                return response('Subscription not found', 404);
+            }
 
-        if ($subscription) {
-            $nouveauxJours = $subscription->jours + 30;
+            Log::debug("OK");
+            // $subscription->increment('jours', 30);
+            $subscription->updateSubscription(30);
+            $subscription->save();
 
-            $subscription->update([
-                'status'       => 'pay',
-                'account'      => 'unlocked',
-                'jours'        => $nouveauxJours,
-                'type_account' => $subscription->type_account === 'new' && $nouveauxJours > 30 ? 'old' : $subscription->type_account,
-            ]);
-        } else {
-            // Paiement sans abonnement existant (rare mais possible)
-            Subscription::create([
-                'google_id'     => $user->google_id,
-                'prix'          => 100,
-                'status'        => 'pay',
-                'account'       => 'unlocked',
-                'jours'         => 30,
-                'type_account'  => 'new',
-            ]);
+            info(json_encode($subscription->toArray(), JSON_PRETTY_PRINT));
+            info("Subscription is active: {$subscription->isActive}");
+            $days_to_expiration = round($subscription->daysToExpiration);
+            info("Days to expiration: {$days_to_expiration}");
+            Log::info("✅ Subscription mise à jour pour {$email} : +30 jours (total: " . ($subscription->jours) . ").");
         }
-    }
-}
-
 
         return response('OK', 200);
     }
+
 }

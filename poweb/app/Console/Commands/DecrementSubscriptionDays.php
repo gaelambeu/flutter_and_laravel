@@ -18,16 +18,20 @@ class DecrementSubscriptionDays extends Command
             if ($sub->jours > 0) {
                 $sub->jours -= 1;
 
-                // Si les jours sont épuisés, on bloque
                 if ($sub->jours === 0) {
                     $sub->status = 'nopay';
                     $sub->account = 'locked';
-                    $sub->type_account = 'old'; // même s’il était "new"
+
+                    // ✅ C’est ici que type_account devient "old"
+                    if ($sub->type_account === 'new') {
+                        $sub->type_account = 'old';
+                    }
                 }
 
                 $sub->save();
             }
         }
+
 
         $this->info('Jours décrémentés et comptes mis à jour.');
     }

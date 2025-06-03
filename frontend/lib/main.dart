@@ -72,7 +72,7 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/signup': (context) => const SignUpPage(),
         '/home': (context) => HomeScreen(googleId: googleId ?? ""),
-        '/sub' : (context) => const SubPage(),
+        //'/sub' : (context) => SubPage(googleId: googleId ?? ""),
         '/menu': (context) =>  MenuScreen(),
         '/premium': (context) =>  PremiumScreen(),
         '/profil': (context) => LoggedInPage(googleId: googleId ?? ""),
